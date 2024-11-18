@@ -25,34 +25,77 @@ def click_element(class_name,driver):
     except Exception as e:
         print(f"打开链接失败: {e}")
         return None
+    
+def get_task_count(driver):
+    try:
+        # 等待任务数量元素完全可见
+        task_element = WebDriverWait(driver, 30).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, "div.col-lg-4 strong#sum"))
+        )
+        # 获取该元素的文本内容，并转换为整数
+        task_count = int(task_element.text)
+        print(f"当前任务数量: {task_count}")
+        return task_count
+    except Exception as e:
+        print(f"获取任务数量失败: {e}")
+        # 加载失败时，提示用户手动输入任务数量
+        while True:
+            try:
+                print(f"请手动输入的任务数量: {task_count}")
+                task_count = int(input("请输入任务数量: "))
+                return task_count
+            except ValueError:
+                print("输入无效，请输入一个有效的整数。")
 
-def submit_form(class_name,driver):
+
+
+
+def submit_form(class_name, driver):
     try:
         # 等待并点击确认提交按钮
         submit_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR,class_name))
+            EC.element_to_be_clickable((By.CSS_SELECTOR, class_name))
         )
         driver.execute_script("arguments[0].click();", submit_button)
         print("表单已提交")
+        
+        # 等待页面加载完成
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "a#btn-goBack"))
+        )
+        print("页面已加载完成")
+        time.sleep(10)
+        # 点击返回按钮
+        back_button = driver.find_element(By.CSS_SELECTOR, "a#btn-goBack")
+        driver.execute_script("arguments[0].click();", back_button)
+        print("点击了返回按钮")
+        time.sleep(5)
     except Exception as e:
         print(f"提交表单失败: {e}")
+
 
 def click_all_five(driver):
     try:
         # 等待所有单选按钮加载
-        radio_buttons = WebDriverWait(driver, 20).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'table#evlTable tbody tr td input[type="radio"]'))
+        rows = WebDriverWait(driver, 20).until(
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, 'table#evlTable tbody tr'))
         )
-        print(f"单选按钮总数: {len(radio_buttons)}")
-
-        # 遍历所有单选按钮，每找到7个就点击第二个
-        for i in range(len(radio_buttons)):
-            if i % 7 == 1:  # 每7个按钮点击一次，即点击第2个
-                driver.execute_script("arguments[0].click();", radio_buttons[i])
-                print(f"点击了第 {i+1} 个单选按钮")
-                
+        print(f"总行数: {len(rows)}")
+        
+        # 遍历每一行
+        for i, row in enumerate(rows):
+            # 获取当前行的所有单选按钮
+            radio_buttons_in_row = row.find_elements(By.CSS_SELECTOR, 'td input[type="radio"]')
+            # 如果该行至少有两个按钮，点击第二个按钮
+            if len(radio_buttons_in_row) > 1:
+                driver.execute_script("arguments[0].click();", radio_buttons_in_row[1])  # 点击第二个按钮
+                print(f"点击了第 {i+1} 行的第二个按钮")
+            else:
+                print(f"第 {i+1} 行没有第二个按钮")
+        
     except Exception as e:
         print(f"点击评分失败: {e}")
+
 
 def set_search_box_value(class_name,value,driver):
     try:
@@ -78,8 +121,6 @@ def Start(driver):
     #输入学号密码
     user = input("请输入学号:")
     passward = input("请输入密码:")
-    #输入评教次数
-    num = int(input("请输入评教次数:"))
     # 初始化 EdgeDriver 对象
     service = webdriver.EdgeService(driver.driver_path)
     # 设置 Edge 选项
@@ -113,8 +154,10 @@ def Start(driver):
     print("已输入密码")
     #点击登录
     click_element(_click_login,driver)
+    
+    num = get_task_count(driver)
     #开始测评
-    for i in range(1,num):
+    for i in range(1,num+1):
         click_element(_test,driver)
         click_all_five(driver)
         time.sleep(1)
@@ -122,10 +165,10 @@ def Start(driver):
         time.sleep(1)
         submit_form(_confirm,driver)
         print(f"已完成第{i}个评教")
-        time.sleep(25)
+        
     
     print("评教完成")
-    time.sleep(20)
+    time.sleep(10)
     
 
 #下载驱动
