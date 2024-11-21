@@ -4,9 +4,6 @@
 使用说明：
 	双击 学生评教.exe 输入学号，密码
 
-联系作者：
-	qq:1369459825
-
 github地址：
 	https://github.com/lzysbl/Neu_pingjiao
 	觉得好用就去给我个star吧！
